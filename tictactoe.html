@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e3f2fd; /* Light blue background */
+            color: #333;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.dark {
+            background-color: #121212;
+            color: #f0f0f0;
+        }
+        #container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        #sidebar {
+            background: #1976d2; /* Darker blue */
+            color: white;
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
+            display: none; /* Initially hidden */
+        }
+        #sidebar h2 {
+            margin: 0 0 20px;
+            font-size: 32px;
+            text-align: center;
+        }
+        .button {
+            background: #42a5f5; /* Lighter blue */
+            color: white;
+            border: none;
+            margin: 10px 0;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .button:hover {
+            background: #1e88e5; /* Darker on hover */
+            transform: scale(1.05);
+        }
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: background 0.3s;
+        }
+        #main h1 {
+            font-size: 56px;
+            margin: 0;
+            color: #1976d2; /* Matching sidebar color */
+        }
+        #gameScreen {
+            display: none;
+            text-align: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            margin: 20px auto;
+            width: 100%;
+            max-width: 800px; /* Increased max width */
+        }
+        .cell {
+            height: 200px; /* Height of each cell */
+            width: 200px; /* Width of each cell for more visibility */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 96px; /* Font size for the cell text */
+            background-color: #bbdefb; /* Light blue for cells */
+            border: 4px solid #1976d2; /* Darker blue for borders */
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            animation: fadeIn 0.3s; /* Fade in animation */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .cell.dark {
+            background-color: #424242;
+            border-color: #bb86fc;
+            color: #f0f0f0;
+        }
+        .cell:hover {
+            background-color: #90caf9; /* Hover effect */
+            transform: scale(1.05);
+        }
+        .result {
+            font-size: 32px;
+            margin: 20px;
+            color: #1976d2; /* Darker blue for results */
+        }
+        .settings, .savedBoards {
+            margin-top: 20px;
+            display: none;
+            width: 80%;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .input {
+            padding: 12px;
+            border: 2px solid #1976d2; /* Border color */
+            border-radius: 5px;
+            width: 90%;
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        #highscores {
+            margin-top: 20px;
+            text-align: left;
+            width: 100%;
+        }
+        .highscore {
+            margin: 5px 0;
+        }
+        #soundToggle {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <div id="sidebar">
+        <h2>Tic Tac Toe</h2>
+        <button class="button" id="homeBtn">Home</button>
+        <button class="button" id="singlePlayerBtn">Single Player</button>
+        <button class="button" id="multiPlayerBtn">Multiplayer</button>
+        <button class="button" id="settingsBtn">Settings</button>
+        <button class="button" id="accountBtn">Account</button>
+        <button class="button" id="savedBoardsBtn">Saved Boards</button>
+        <button class="button" id="signOutBtn">Sign Out</button>
+    </div>
+    <div id="main">
+        <div id="loginScreen">
+            <h1>Login</h1>
+            <input type="text" class="input" id="loginUsername" placeholder="Username" />
+            <input type="password" class="input" id="loginPassword" placeholder="Password" />
+            <button class="button" id="loginBtn">Login</button>
+            <button class="button" id="createAccountBtn">Create Account</button>
+        </div>
+
+        <div id="homeScreen" style="display: none;">
+            <h1>Welcome!</h1>
+            <div id="highscores"></div>
+        </div>
+
+        <div id="gameScreen">
+            <div class="grid" id="grid"></div>
+            <div class="result" id="result"></div>
+            <button class="button" id="restartBtn">Restart</button>
+            <button class="button" id="homeFromGameBtn">Home</button>
+            <audio id="winSound" src="win-sound.mp3"></audio>
+            <audio id="clickSound" src="click-sound.mp3"></audio>
+        </div>
+
+        <div id="settingsScreen" class="settings">
+            <h2>Settings</h2>
+            <label for="themeToggle">Dark Mode:</label>
+            <input type="checkbox" id="themeToggle">
+            <br><br>
+            <label for="soundToggle">Sound Effects:</label>
+            <input type="checkbox" id="soundToggle" checked>
+            <br><br>
+            <label for="difficultySelect">AI Difficulty:</label>
+            <select id="difficultySelect">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+            <br><br>
+            <label for="roundsSelect">Rounds:</label>
+            <select id="roundsSelect">
+                <option value="1">1 Round</option>
+                <option value="3">3 Rounds</option>
+                <option value="5">5 Rounds</option>
+            </select>
+            <br><br>
+            <button class="button" id="backToMenuBtn">Back to Menu</button>
+        </div>
+
+        <div id="accountScreen" class="settings">
+            <h2>Account</h2>
+            <input type="text" class="input" id="username" placeholder="Enter Username" />
+            <input type="password" class="input" id="password" placeholder="Enter Password" />
+            <button class="button" id="saveAccountBtn">Create Account</button>
+            <button class="button" id="backToHomeFromAccountBtn">Back to Menu</button>
+        </div>
+
+        <div id="savedBoardsScreen" class="savedBoards">
+            <h2>Saved Boards</h2>
+            <div id="savedBoardsList"></div>
+            <button class="button" id="backToHomeFromBoardsBtn">Back to Menu</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const homeScreen = document.getElementById('homeScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const settingsScreen = document.getElementById('settingsScreen');
+    const accountScreen = document.getElementById('accountScreen');
+    const savedBoardsScreen = document.getElementById('savedBoardsScreen');
+    const loginScreen = document.getElementById('loginScreen');
+    const gridElement = document.getElementById('grid');
+    const resultElement = document.getElementById('result');
+    const themeToggle = document.getElementById('themeToggle');
+    const soundToggle = document.getElementById('soundToggle');
+    const winSound = document.getElementById('winSound');
+    const clickSound = document.getElementById('clickSound');
+
+    let board = Array(9).fill(null);
+    let currentPlayer = 'X';
+    let mode = 'single';
+    let playerXScore = 0;
+    let playerOScore = 0;
+    let totalRounds = 1;
+    let currentRound = 1;
+    let currentUsername = null;
+    let userAccounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+
+    document.getElementById('singlePlayerBtn').onclick = () => {
+        closeAllScreens();
+        mode = 'single';
+        totalRounds = parseInt(document.getElementById('roundsSelect').value);
+        currentRound = 1;
+        startGame();
+    };
+    
+    document.getElementById('multiPlayerBtn').onclick = () => {
+        closeAllScreens();
+        mode = 'multi';
+        totalRounds = parseInt(document.getElementById('roundsSelect').value);
+        currentRound = 1;
+        startGame();
+    };
+
+    document.getElementById('settingsBtn').onclick = showSettings;
+    document.getElementById('accountBtn').onclick = showAccount;
+    document.getElementById('savedBoardsBtn').onclick = showSavedBoards;
+    document.getElementById('loginBtn').onclick = login;
+    document.getElementById('createAccountBtn').onclick = () => {
+        loginScreen.style.display = 'none';
+        accountScreen.style.display = 'block';
+    };
+    document.getElementById('saveAccountBtn').onclick = saveAccount;
+    document.getElementById('backToMenuBtn').onclick = showHome;
+    document.getElementById('restartBtn').onclick = restartGame;
+    document.getElementById('homeFromGameBtn').onclick = showHome;
+    document.getElementById('backToHomeFromBoardsBtn').onclick = showHome;
+    document.getElementById('signOutBtn').onclick = signOut;
+
+    themeToggle.addEventListener('change', () => {
+        document.body.classList.toggle('dark');
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(cell => cell.classList.toggle('dark'));
+    });
+
+    function login() {
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+
+        if (!username || !password) {
+            alert('Please enter both username and password.');
+            return;
+        }
+
+        if (userAccounts[username] && userAccounts[username].password === password) {
+            currentUsername = username;
+            alert('Login successful!');
+            showHome();
+        } else {
+            alert('Invalid username or password.');
+        }
+    }
+
+    function signOut() {
+        currentUsername = null;
+        alert('Signed out successfully!');
+        showHome();
+    }
+
+    function showHome() {
+        closeAllScreens();
+        homeScreen.style.display = 'block';
+        document.getElementById('sidebar').style.display = 'flex'; // Show sidebar
+        renderHighScores();
+    }
+
+    function closeAllScreens() {
+        gameScreen.style.display = 'none';
+        settingsScreen.style.display = 'none';
+        accountScreen.style.display = 'none';
+        savedBoardsScreen.style.display = 'none';
+        loginScreen.style.display = 'none';
+        homeScreen.style.display = 'none'; // Hide home screen
+    }
+
+    function showSettings() {
+        closeAllScreens();
+        settingsScreen.style.display = 'block';
+    }
+
+    function showAccount() {
+        closeAllScreens();
+        accountScreen.style.display = 'block';
+    }
+
+    function startGame() {
+        board = Array(9).fill(null);
+        currentPlayer = 'X';
+        resultElement.textContent = '';
+        closeAllScreens();
+        gameScreen.style.display = 'block';
+        renderGrid();
+    }
+
+    function renderGrid() {
+        gridElement.innerHTML = '';
+        board.forEach((cell, index) => {
+            const cellElement = document.createElement('div');
+            cellElement.className = 'cell';
+            cellElement.textContent = cell || '';
+            cellElement.onclick = () => handleCellClick(index);
+            gridElement.appendChild(cellElement);
+        });
+    }
+
+    function handleCellClick(index) {
+        if (!board[index]) {
+            board[index] = currentPlayer;
+            playSound(clickSound);
+            if (checkWin(currentPlayer)) {
+                resultElement.textContent = `${currentPlayer} Wins!`;
+                playSound(winSound);
+                updateScore(currentPlayer);
+            } else if (board.every(cell => cell)) {
+                resultElement.textContent = 'It\'s a Draw!';
+            } else {
+                currentPlayer = mode === 'single' ? 'O' : (currentPlayer === 'X' ? 'O' : 'X');
+                if (mode === 'single' && currentPlayer === 'O') {
+                    aiMove();
+                }
+            }
+            renderGrid();
+        }
+    }
+
+    function aiMove() {
+        const bestMove = findBestMove(board);
+        if (bestMove !== null) {
+            board[bestMove] = currentPlayer;
+            if (checkWin(currentPlayer)) {
+                resultElement.textContent = `${currentPlayer} Wins!`;
+                playSound(winSound);
+                updateScore(currentPlayer);
+            } else if (board.every(cell => cell)) {
+                resultElement.textContent = 'It\'s a Draw!';
+            }
+            currentPlayer = 'X';
+            renderGrid();
+        }
+    }
+
+    function findBestMove(board) {
+        let bestScore = -Infinity;
+        let move;
+
+        for (let i = 0; i < 9; i++) {
+            if (board[i] === null) {
+                board[i] = 'O';
+                const score = minimax(board, 0, false);
+                board[i] = null;
+                if (score > bestScore) {
+                    bestScore = score;
+                    move = i;
+                }
+            }
+        }
+        return move;
+    }
+
+    function minimax(board, depth, isMaximizing) {
+        if (checkWin('O')) return 10 - depth;
+        if (checkWin('X')) return depth - 10;
+        if (board.every(cell => cell)) return 0;
+
+        if (isMaximizing) {
+            let bestScore = -Infinity;
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === null) {
+                    board[i] = 'O';
+                    const score = minimax(board, depth + 1, false);
+                    board[i] = null;
+                    bestScore = Math.max(score, bestScore);
+                }
+            }
+            return bestScore;
+        } else {
+            let bestScore = Infinity;
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === null) {
+                    board[i] = 'X';
+                    const score = minimax(board, depth + 1, true);
+                    board[i] = null;
+                    bestScore = Math.min(score, bestScore);
+                }
+            }
+            return bestScore;
+        }
+    }
+
+    function checkWin(player) {
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+        return winPatterns.some(pattern => pattern.every(index => board[index] === player));
+    }
+
+    function updateScore(winner) {
+        if (winner === 'X') playerXScore++;
+        if (winner === 'O') playerOScore++;
+        renderHighScores();
+        setTimeout(() => {
+            if (currentRound < totalRounds) {
+                currentRound++;
+                startGame();
+            } else {
+                showHome();
+            }
+        }, 2000);
+    }
+
+    function renderHighScores() {
+        highscoresElement.innerHTML = `<h3>High Scores</h3>
+            <div class="highscore">X: ${playerXScore}</div>
+            <div class="highscore">O: ${playerOScore}</div>
+            <div class="highscore">Current User: ${currentUsername || 'Guest'}</div>`;
+    }
+
+    function restartGame() {
+        startGame();
+    }
+
+    function saveAccount() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (!username || !password) {
+            alert('Please fill all fields.');
+            return;
+        }
+
+        if (userAccounts[username]) {
+            alert('Username already exists.');
+            return;
+        }
+
+        userAccounts[username] = {
+            password: password,
+            score: { X: 0, O: 0 }
+        };
+        localStorage.setItem('userAccounts', JSON.stringify(userAccounts));
+        currentUsername = username;
+        alert('Account created successfully!');
+        showHome();
+    }
+
+    function showSavedBoards() {
+        closeAllScreens();
+        savedBoardsScreen.style.display = 'block';
+        // Here you would render saved boards if implemented
+    }
+
+    function playSound(sound) {
+        if (soundToggle.checked) {
+            sound.currentTime = 0; // Restart sound
+            sound.play();
+        }
+    }
+</script>
+</body>
+</html>
